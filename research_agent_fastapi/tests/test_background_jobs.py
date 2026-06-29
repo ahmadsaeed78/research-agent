@@ -9,7 +9,7 @@ async def test_background_job():
         # Step 1: submit the job — should return immediately
         start = time.time()
         response = await client.post(
-            "http://127.0.0.1:8000/research/job",
+            "http://127.0.0.1:8000/research/job_celery",
             json={"topic": "What are the main AI regulations in 2026?"}
         )
         submit_time = time.time() - start
@@ -26,7 +26,7 @@ async def test_background_job():
                 await asyncio.sleep(5)  # check every 5 seconds
 
                 status_response = await poll_client.get(
-                    f"http://127.0.0.1:8000/research/job/{job_id}"
+                    f"http://127.0.0.1:8000/research/job_celery/{job_id}"
                 )
                 status = status_response.json()
                 print(f"Status: {status['status']}")

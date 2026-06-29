@@ -8,7 +8,7 @@ async def test_stream():
     async with httpx.AsyncClient(timeout=120.0) as client:
         async with client.stream(
             "POST",
-            "http://127.0.0.1:8000/research/stream",
+            "https://research-agent-production-67ee.up.railway.app/research/stream",
             json={"topic": "What are the main AI regulations in 2026?"}
         ) as response:
             async for line in response.aiter_lines():
