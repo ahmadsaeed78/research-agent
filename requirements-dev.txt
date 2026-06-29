@@ -1,0 +1,4 @@
+# Development-only dependencies
+pytest==9.0.2
+pytest-asyncio==1.3.0
+httpx==0.26.2

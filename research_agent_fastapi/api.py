@@ -21,6 +21,13 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 
 
+
+#redis + celery 
+from .worker import run_research_task
+from .celery_app import celery_app
+from celery.result import AsyncResult
+
+
 # POST /research          → blocking JSON    — wait for full result, one response
 # POST /research/stream   → SSE streaming   — live tokens, connection stays open
 # POST /research/job      → background job  — instant job_id, poll for result
@@ -262,8 +269,44 @@ async def get_job_status(job_id: str):
 
 
 
+#below redis research job
+
+@app.post("/research/job_celery")
+async def create_research_job_celery(request: ResearchRequest):
+    """Submit a research job to Celery. Returns immediately with task ID."""
+    task = run_research_task.delay(request.topic)
+    return {
+        "job_id": task.id,
+        "status": "PENDING"
+    }
 
 
+@app.get("/research/job_celery/{job_id}")
+async def get_job_status_celery(job_id: str):
+    """Check job status and retrieve result when complete."""
+    task_result = AsyncResult(job_id, app=celery_app)
+    if task_result.state == "PENDING":
+        return {"job_id": job_id, "status": "PENDING"}
+
+    elif task_result.state == "STARTED":
+        return {"job_id": job_id, "status": "RUNNING"}
+
+    elif task_result.state == "SUCCESS":
+        return {
+            "job_id": job_id,
+            "status": "COMPLETED",
+            "result": task_result.result
+        }
+
+    elif task_result.state == "FAILURE":
+        return {
+            "job_id": job_id,
+            "status": "FAILED",
+            "error": str(task_result.result)
+        }
+
+    else:
+        return {"job_id": job_id, "status": task_result.state}
 
 
 
